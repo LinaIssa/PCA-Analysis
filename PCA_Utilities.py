@@ -13,6 +13,9 @@ import numpy  as np
 from sklearn.utils.extmath import svd_flip
 from sklearn.metrics import mean_squared_error
 from scipy import linalg, ndimage
+from sklearn.preprocessing import StandardScaler 
+
+
 
 ################################################################################################
 #                                    Functions                                          #
@@ -135,6 +138,7 @@ def apply_mask(data_cube, mask):
     Parameters
     ----------
     data_cube: A spectral data cube of shape (number_bands, pix1, pix2)
+    mask     : A mask of shape (pix1,pix2) in which TRUE corresponds to the pixels to dispose of and FALSE the pixels to keep   
 
     Returns
     -------
@@ -241,6 +245,7 @@ def explained_variance_ratio(eigen_values, n_samples):
 
 
 def pca_nirspec(Yns, nb_comp, masterMask, masked=True):
+
     """
     @author: Lina Issa
 
@@ -278,10 +283,11 @@ def pca_nirspec(Yns, nb_comp, masterMask, masked=True):
 
     if masked is None:
         X = np.reshape(Yns.copy(), (Lh, pix1 * pix2)).T  # X depliage de Yns
+
     else:
         MaskedCubes    = masked_datacubes(Yns)            # removing the all-zeros in the image
         ClippedCube, _ = clipping_datacubes(MaskedCubes) # removing the outliers and replace them with the median
-        X              = apply_mask(ClippedCube, masterMask)  # depliage du cube clippé + masqué
+        X              = apply_mask(Yns, masterMask)  # depliage du cube clippé + masqué
         pass
 
     # PCA
@@ -291,7 +297,7 @@ def pca_nirspec(Yns, nb_comp, masterMask, masked=True):
     ## Projection du cube
 
     if masked is None:
-        Z_cube = np.reshape(Z, (nb_comp, pix1, pix2))  # replie le cube
+        Z_cube = np.reshape(Z.T, (nb_comp, pix1, pix2))  # replie le cube
     else:
         Z_cube = repliage(nb_comp, pix1, pix2, Z, masterMask)
     return V, Z_cube, X_mean, S
